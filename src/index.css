@@ -1,0 +1,206 @@
+@import './styles/glassEffect.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Ensure full viewport coverage - FULLY TRANSPARENT */
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+}
+
+/* Glass container - FULLY TRANSPARENT for true Apple glass effect */
+.glass-container {
+  width: 100%;
+  min-height: 100vh;
+  color: rgba(0, 0, 0, 0.95);
+  background: transparent;
+}
+.liquid-glass {
+  background: transparent;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 1rem;
+  box-shadow: none;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Enhanced liquid glass with shimmer effect */
+.liquid-glass::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    transparent,
+    transparent
+  );
+  animation: shimmer 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  50% {
+    left: 100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Fallback for browsers without backdrop-filter support */
+@supports not (backdrop-filter: blur()) {
+  .liquid-glass {
+    background: transparent;
+    border: 2px solid transparent;
+  }
+}
+
+/* Add a subtle outline to ensure visibility */
+.liquid-glass:before {
+  outline: 1px solid rgba(255, 255, 255, 0.1);
+  outline-offset: -1px;
+}
+
+.draggable-area {
+  -webkit-app-region: drag;
+  height: 32px;
+  width: 100%;
+  background: transparent;
+  cursor: move;
+  position: relative;
+  z-index: 1000;
+  border-radius: 1rem 1rem 0 0;
+}
+
+/* Make sure buttons and interactive elements are not draggable */
+button, input, select, textarea, .interactive {
+  -webkit-app-region: no-drag;
+}
+
+/* Override for the liquid glass bar - make it draggable */
+.liquid-glass.draggable-area {
+  -webkit-app-region: drag;
+  cursor: move;
+}
+
+/* But keep buttons inside clickable */
+.liquid-glass.draggable-area button {
+  -webkit-app-region: no-drag;
+  cursor: pointer;
+}
+
+/* Add visual feedback for draggable area */
+.draggable-area:hover {
+  background: transparent;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+/* Dark theme liquid glass variant */
+.liquid-glass-dark {
+  background: transparent;
+  backdrop-filter: blur(16px) saturate(180%) brightness(80%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%) brightness(80%);
+  border: 1px solid transparent;
+  box-shadow: transparent;
+}
+
+/* Ensure content is not blurred */
+.glass-content {
+  position: relative;
+  z-index: 1;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Chat container specific styling */
+.liquid-glass.chat-container {
+  min-height: auto;
+  height: auto;
+  background: transparent;
+  backdrop-filter: blur(20px) saturate(200%) brightness(110%);
+  -webkit-backdrop-filter: blur(20px) saturate(200%) brightness(110%);
+  border: 1px solid transparent;
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* Thin bar variant of liquid glass - for command bar */
+.liquid-glass-bar {
+  background: transparent;
+  backdrop-filter: blur(16px) saturate(180%) brightness(120%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%) brightness(120%);
+  border: 2px solid transparent;
+  border-radius: 1rem;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+}
+
+/* Shimmer effect for bar variant */
+.liquid-glass-bar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  animation: shimmer 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Custom Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.16);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,0,0,0.24);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
