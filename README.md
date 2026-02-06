@@ -1,82 +1,82 @@
-# CrackCode - Invisible AI-Powered Interview Assistant
+# CrackIt (CrackCoder) - Invisible AI-Powered Interview Assistant
 
-A powerful, completely invisible AI tool for solving Coding questions during technical interviews. The tool runs 100% undetectably in the background - no screen recording or monitoring software can identify its presence. 
+A powerful, stealthy AI tool for solving Coding questions and MCQs during technical interviews. The tool runs 100% undetectably in the background using the latest **Google Gemini 3 (2026)** models.
 
-Open-source Alternative to Interview Coder
+**Repository**: [https://github.com/rdxkeerthi/CrackIt](https://github.com/rdxkeerthi/CrackIt)
 
-## Demo
-https://github.com/user-attachments/assets/179701eb-0fcf-4e33-86f3-c92688f508a5
+## 🚀 Key Features
 
+- **🔒 Stealth Mode**: Completely invisible. Toggle visibility instantly with `Ctrl + B`.
+- **🧠 Advanced AI**: Powered by **Gemini 3 Flash & Pro (2026)** for superior coding and logic.
+- **📝 Multi-Mode**:
+  - **Coding Mode**: Solves algorithmic problems with time/space complexity.
+  - **MCQ Mode**: Solves multiple-choice questions with explanations.
+- **⚡ Fast & Responsive**: Optimized for speed with keyboard shortcuts.
+- **🛠️ Easy Config**: Configure your API key directly in the app (`Ctrl + P`). No restarting required.
 
+## 📥 Installation
 
-## Features
-
-- 🔒 100% Undetectable - Completely invisible to all screen recording and monitoring software
-- 🤖 Real-time AI assistance for solving Coding problems
-- 🌐 Support for multiple programming languages
-- 🎯 Precise, contextual coding suggestions
-- ⚙️ Easy configuration setup
-
-
-### Local Setup
-
-1. Clone the repository:
+1. **Clone the repository**:
    ```bash
-   git clone https://github.com/yourusername/crackcode.git
-   cd crackcode
+   git clone https://github.com/rdxkeerthi/CrackIt.git
+   cd CrackIt
    ```
 
-2. Install dependencies:
+2. **Install dependencies**:
    ```bash
    npm install
    ```
 
-3. Configure environment variables:(Or set these in the Settings ⌘/Ctrl + P )
-   - Copy `.env.example` to `.env`
-   - Add your OpenAI API key
-   - Set your preferred programming language
+3. **Build the project**:
+   ```bash
+   npm run build
+   ```
 
-4. Start the Application:
-    ```bash
+4. **Start the application**:
+   ```bash
    npm start
    ```
-    
 
-## Prerequisites
+## ⚙️ Configuration
 
-- Node.js (v14 or higher) - only for local setup
-- npm (Node Package Manager) - only for local setup
-- OpenAI API key
+1. Launch the app (`npm start`).
+2. Press **`Ctrl/Cmd + P`** to open the Settings screen.
+3. Enter your **Google Gemini API Key**.
+   - Get a key here: [Google AI Studio](https://aistudio.google.com/app/apikey) (It's free!)
+4. Click **Save**. The app will validate your key and auto-close the settings.
 
-## Configuration
+> **Note**: The app automatically selects the best available model (Gemini 3 Flash/Pro) based on your key limits.
 
-Create a `.env` file in the root directory with the following settings: ( or Just press ⌘/Ctrl + P and set it up in Settings/Config page)
-```env
-OPENAI_API_KEY="your-api-key-here"
-APP_LANGUAGE="Java"  # Or Python, JavaScript, C++, etc.
-```
+## ⌨️ Shortcuts
 
-## Usage
+| Shortcut | Action |
+|----------|--------|
+| **`Ctrl/Cmd + H`** | **Capture Screenshot** (Analyze current screen) |
+| **`Ctrl/Cmd + Enter`** | **View Solution** (Show AI output) |
+| **`Ctrl/Cmd + B`** | **Stealth Mode** (Instantly Hide/Show App) |
+| **`Ctrl/Cmd + P`** | **Settings** (API Key & Language) |
+| **`Ctrl/Cmd + M`** | **Cycle Mode** (Coding / MCQ) |
+| **`Ctrl/Cmd + L`** | **Cycle Language** (Python / Java / C++ / JS) |
+| **`Ctrl/Cmd + R`** | **Reset** |
+| **`Ctrl/Cmd + Q`** | **Quit** |
+| **`Ctrl/Cmd + Arrows`** | **Move Window** |
 
-   Start the application:
-   ```bash
-   npm start   # For local setup
-   ```
+## 🤖 Models Used
 
-## Shortcuts
+This project uses the latest 2026 Gemini models:
+- **`gemini-3-flash-preview`**: Ultra-fast, optimized for coding and standardized tests.
+- **`gemini-2.5-flash`**: Stable, production-ready fallback.
+- **`gemini-3-pro-preview`**: High-reasoning model for complex architecture questions.
 
-### General Shortcuts
+## 🤝 Contributing
 
-- **Screenshot**: ⌘/Ctrl + H
-- **Solution**: ⌘/Ctrl + ↵/Enter
-- **Reset**: ⌘/Ctrl + R
-- **Show/Hide**: ⌘/Ctrl + B
-- **Settings/Config (Configure your preferred coding language and OpenAI API key)**: ⌘/Ctrl + P 
-- **Quit**: ⌘/Ctrl + Q
-- **Move Around**: ⌘/Ctrl + Arrow Keys
+Contributions are welcome!
+1. Fork the repo
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-## Contributing
-We welcome contributions! Please feel free to submit a Pull Request.
+## 📄 License
 
-## Support
-If you find this tool helpful, please consider giving it a star ⭐️
+Distributed under the MIT License. See `LICENSE` for more information.
