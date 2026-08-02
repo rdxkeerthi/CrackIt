@@ -2,15 +2,15 @@ import React, { useState } from 'react';
 import './ConfigScreen.css';
 
 interface ConfigProps {
-  onSave: (config: { apiKey: string; language: string; mode: 'auto' | 'coding' | 'mcq' }) => void;
-  initialConfig?: { apiKey: string; language: string; mode?: 'auto' | 'coding' | 'mcq' };
+  onSave: (config: { apiKey: string; language: string; mode: 'auto' | 'coding' | 'mcq' | 'interview' | 'qa' }) => void;
+  initialConfig?: { apiKey: string; language: string; mode?: 'auto' | 'coding' | 'mcq' | 'interview' | 'qa' };
   isValidating?: boolean;
 }
 
 const ConfigScreen: React.FC<ConfigProps> = ({ onSave, initialConfig, isValidating }) => {
   const [apiKey, setApiKey] = useState(initialConfig?.apiKey || '');
   const [language, setLanguage] = useState(initialConfig?.language || 'Python');
-  const [mode, setMode] = useState<'auto' | 'coding' | 'mcq'>(initialConfig?.mode || 'auto');
+  const [mode, setMode] = useState<'auto' | 'coding' | 'mcq' | 'interview' | 'qa'>(initialConfig?.mode || 'auto');
   const [showApiKey, setShowApiKey] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -74,6 +74,8 @@ const ConfigScreen: React.FC<ConfigProps> = ({ onSave, initialConfig, isValidati
               <option value="auto">Auto Detect</option>
               <option value="coding">Coding Only</option>
               <option value="mcq">MCQ Only</option>
+              <option value="interview">Interview Script</option>
+              <option value="qa">Q&A Direct Answer</option>
             </select>
           </div>
           <div className="form-actions">

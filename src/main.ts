@@ -35,7 +35,7 @@ console.log('Config file path:', CONFIG_FILE);
 interface Config {
   apiKey: string;
   language: string;
-  mode?: 'auto' | 'coding' | 'mcq';
+  mode?: 'auto' | 'coding' | 'mcq' | 'interview' | 'qa';
   activeModel?: string;
 }
 
@@ -126,12 +126,16 @@ function createWindow() {
     backgroundColor: "#00000000",
     hasShadow: false,
     alwaysOnTop: true,
+    skipTaskbar: true,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js')
     }
   });
+
+  // Ensure window stays strictly on top of all applications, including full screen apps
+  mainWindow.setAlwaysOnTop(true, 'screen-saver', 1);
 
   // Open DevTools by default in development
   if (process.env.NODE_ENV === 'development') {
@@ -154,7 +158,7 @@ function createWindow() {
     mainWindow.setVisibleOnAllWorkspaces(true, {
       visibleOnFullScreen: true
     });
-    mainWindow.setAlwaysOnTop(true, "floating");
+    mainWindow.setAlwaysOnTop(true, "screen-saver", 1);
   }
 
   // Load the index.html file from the dist directory
@@ -165,6 +169,16 @@ function createWindow() {
     registerShortcuts();
   } catch (e) {
     console.error('Failed to register shortcuts:', e);
+  }
+}
+
+function safeSend(channel: string, ...args: any[]) {
+  try {
+    if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.webContents.isDestroyed()) {
+      mainWindow.webContents.send(channel, ...args);
+    }
+  } catch (err) {
+    // Ignore window destruction during app quit
   }
 }
 
@@ -186,15 +200,15 @@ function registerShortcuts() {
 
   // Config shortcut
   globalShortcut.register('CommandOrControl+P', () => {
-    mainWindow?.webContents.send('show-config');
+    safeSend('show-config');
   });
 
   // New Shortcuts
   globalShortcut.register('CommandOrControl+M', () => {
-    mainWindow?.webContents.send('cycle-mode');
+    safeSend('cycle-mode');
   });
   globalShortcut.register('CommandOrControl+L', () => {
-    mainWindow?.webContents.send('cycle-language');
+    safeSend('cycle-language');
   });
 }
 
@@ -244,10 +258,14 @@ async function handleTakeScreenshot() {
     const screenshot = { id, preview, path: screenshotPath };
     screenshotQueue.push(screenshot);
 
+    mainWindow?.setContentProtection(true);
+    mainWindow?.setAlwaysOnTop(true, 'screen-saver', 1);
     mainWindow?.show();
-    mainWindow?.webContents.send('screenshot-taken', screenshot);
+    safeSend('screenshot-taken', screenshot);
   } catch (error) {
     console.error('Error taking screenshot:', error);
+    mainWindow?.setContentProtection(true);
+    mainWindow?.setAlwaysOnTop(true, 'screen-saver', 1);
     mainWindow?.show();
   }
 }
@@ -256,13 +274,13 @@ async function handleProcessScreenshots() {
   if (isProcessing || screenshotQueue.length === 0) return;
 
   isProcessing = true;
-  mainWindow?.webContents.send('processing-started');
+  safeSend('processing-started');
 
   try {
     const result = await geminiService.processScreenshots(screenshotQueue);
     // Check if processing was cancelled
     if (!isProcessing) return;
-    mainWindow?.webContents.send('processing-complete', JSON.stringify(result));
+    safeSend('processing-complete', JSON.stringify(result));
   } catch (error: any) {
     console.error('Error processing screenshots:', error);
     // Check if processing was cancelled
@@ -276,7 +294,7 @@ async function handleProcessScreenshots() {
       errorMessage = error.message;
     }
 
-    mainWindow?.webContents.send('processing-complete', JSON.stringify({
+    safeSend('processing-complete', JSON.stringify({
       error: errorMessage,
       approach: 'Error occurred while processing',
       code: 'Error: ' + errorMessage,
@@ -292,7 +310,7 @@ async function handleResetQueue() {
   // Cancel any ongoing processing
   if (isProcessing) {
     isProcessing = false;
-    mainWindow?.webContents.send('processing-complete', JSON.stringify({
+    safeSend('processing-complete', JSON.stringify({
       approach: 'Processing cancelled',
       code: '',
       timeComplexity: '',
@@ -310,7 +328,7 @@ async function handleResetQueue() {
   }
 
   screenshotQueue = [];
-  mainWindow?.webContents.send('queue-reset');
+  safeSend('queue-reset');
 }
 
 function handleToggleVisibility() {
@@ -318,6 +336,8 @@ function handleToggleVisibility() {
   if (mainWindow.isVisible()) {
     mainWindow.hide();
   } else {
+    mainWindow.setContentProtection(true);
+    mainWindow.setAlwaysOnTop(true, 'screen-saver', 1);
     mainWindow.show();
   }
 }
@@ -378,6 +398,14 @@ app.on('window-all-closed', function () {
 // IPC Handlers
 ipcMain.handle('take-screenshot', handleTakeScreenshot);
 ipcMain.handle('process-screenshots', handleProcessScreenshots);
+ipcMain.handle('process-audio', async (_, audioBase64: string, mimeType: string) => {
+  try {
+    return await geminiService.processAudioQuestion(audioBase64, mimeType);
+  } catch (error: any) {
+    console.error('Error in process-audio IPC:', error);
+    throw new Error(error.message || 'Error processing audio question');
+  }
+});
 ipcMain.handle('reset-queue', handleResetQueue);
 
 // Window control events

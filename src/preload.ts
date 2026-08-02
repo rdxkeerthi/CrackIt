@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('electron', {
 
   takeScreenshot: () => ipcRenderer.invoke('take-screenshot'),
   processScreenshots: () => ipcRenderer.invoke('process-screenshots'),
+  processAudio: (audioBase64: string, mimeType: string) => ipcRenderer.invoke('process-audio', audioBase64, mimeType),
   resetQueue: () => ipcRenderer.invoke('reset-queue'),
   getConfig: () => ipcRenderer.invoke('get-config'),
   saveConfig: (config: any) => ipcRenderer.invoke('save-config', config),

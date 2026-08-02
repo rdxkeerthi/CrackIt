@@ -38,5 +38,8 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: './src/renderer/index.html'
     })
-  ]
+  ],
+  watchOptions: {
+    ignored: ['**/node_modules/**', 'C:/*']
+  }
 }; 

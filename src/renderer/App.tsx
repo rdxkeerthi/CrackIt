@@ -9,23 +9,25 @@ interface Screenshot {
 }
 
 interface ProcessedSolution {
-  type: 'coding' | 'mcq';
-  // Coding specific
+  type: 'coding' | 'mcq' | 'interview' | 'qa';
+  // Coding / Interview specific
   approach?: string;
   code?: string;
   timeComplexity?: string;
   spaceComplexity?: string;
-  // MCQ specific
+  // MCQ & QA specific
   question?: string;
   options?: string[];
   correctOption?: string;
   explanation?: string;
+  // QA specific
+  answer?: string;
 }
 
 interface Config {
   apiKey: string;
   language: string;
-  mode?: 'auto' | 'coding' | 'mcq';
+  mode?: 'auto' | 'coding' | 'mcq' | 'interview' | 'qa';
   activeModel?: string;
 }
 
@@ -38,6 +40,7 @@ declare global {
       quit: () => void;
       takeScreenshot: () => Promise<void>;
       processScreenshots: () => Promise<void>;
+      processAudio: (audioBase64: string, mimeType: string) => Promise<ProcessedSolution>;
       resetQueue: () => Promise<void>;
       getConfig: () => Promise<Config | null>;
       saveConfig: (config: Config) => Promise<{ success: boolean; error?: string; model?: string }>;
@@ -54,6 +57,8 @@ declare global {
 
 const App: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isRecordingAudio, setIsRecordingAudio] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [result, setResult] = useState<ProcessedSolution | null>(null);
   const [screenshots, setScreenshots] = useState<Screenshot[]>([]);
   const [showConfig, setShowConfig] = useState(false);
@@ -87,15 +92,15 @@ const App: React.FC = () => {
     window.electron.onCycleMode(() => {
       setConfig(prev => {
         if (!prev) return null;
-        const modes: ('auto' | 'coding' | 'mcq')[] = ['auto', 'coding', 'mcq'];
+        const modes: ('auto' | 'coding' | 'mcq' | 'interview' | 'qa')[] = ['auto', 'coding', 'mcq', 'interview', 'qa'];
         const nextIndex = (modes.indexOf(prev.mode || 'auto') + 1) % modes.length;
         const newMode = modes[nextIndex];
         const newConfig = { ...prev, mode: newMode };
-        window.electron.saveConfig(newConfig); // Auto save? Maybe just update state for now? 
-        // Let's autosave it for convenience
+        window.electron.saveConfig(newConfig);
+        setSuccessMsg(`Mode switched to: ${newMode.toUpperCase()}`);
+        setTimeout(() => setSuccessMsg(null), 2000);
         return newConfig;
       });
-      // We need a way to show toast for mode change
     });
 
     window.electron.onCycleLanguage(() => {
@@ -238,8 +243,62 @@ const App: React.FC = () => {
     }
   };
 
+  const handleToggleVoiceRecord = async () => {
+    if (isRecordingAudio && mediaRecorder) {
+      mediaRecorder.stop();
+      setIsRecordingAudio(false);
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const audioChunks: Blob[] = [];
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunks.push(event.data);
+        }
+      };
+
+      recorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunks, { type: recorder.mimeType || 'audio/webm' });
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = async () => {
+          const base64Data = (reader.result as string).split(',')[1];
+          setIsProcessing(true);
+          setResult(null);
+          setError(null);
+          try {
+            const solution = await window.electron.processAudio(base64Data, audioBlob.type);
+            setResult(solution);
+          } catch (err: any) {
+            console.error('Voice processing error:', err);
+            setError(err.message || 'Failed to process voice input');
+          } finally {
+            setIsProcessing(false);
+          }
+        };
+        // Stop audio tracks
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      recorder.start();
+      setMediaRecorder(recorder);
+      setIsRecordingAudio(true);
+    } catch (err: any) {
+      console.error('Audio capture error:', err);
+      setError('Microphone access failed: ' + (err.message || 'Denied'));
+    }
+  };
+
   const handleReset = async () => {
     console.log('Resetting queue...');
+    if (isRecordingAudio && mediaRecorder) {
+      mediaRecorder.stop();
+      setIsRecordingAudio(false);
+    }
     await window.electron.resetQueue();
   };
 
@@ -324,17 +383,29 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Preview Row */}
+      {/* Control Buttons & Shortcuts Bar */}
       <div className="shortcuts-row">
-        <div className="shortcut"><code>⌘/Ctrl + H</code> Screenshot</div>
-        <div className="shortcut"><code>⌘/Ctrl + ↵</code> Solution</div>
-        <div className="shortcut"><code>⌘/Ctrl + R</code> Reset</div>
+        <button className="control-btn" onClick={handleTakeScreenshot}>
+          📸 <span>Shot</span>
+        </button>
+        <button className="control-btn" onClick={handleProcess}>
+          💡 <span>Solve</span>
+        </button>
+        <button className={`control-btn ${isRecordingAudio ? 'recording' : ''}`} onClick={handleToggleVoiceRecord}>
+          {isRecordingAudio ? '🔴' : '🎙️'} <span>{isRecordingAudio ? 'Listening...' : 'Voice'}</span>
+        </button>
+        <button className="control-btn" onClick={handleReset}>
+          🔄 <span>Reset</span>
+        </button>
+        <button className="control-btn" onClick={() => setShowConfig(prev => !prev)}>
+          ⚙️ <span>Settings</span>
+        </button>
         <div className="hover-shortcuts">
           <div className="hover-shortcuts-content">
-            <div className="shortcut"><code>⌘/Ctrl + B</code> Show/Hide</div>
-            <div className="shortcut"><code>⌘/Ctrl + P</code> Settings</div>
+            <div className="shortcut"><code>⌘/Ctrl + B</code> Hide/Show</div>
+            <div className="shortcut"><code>⌘/Ctrl + M</code> Mode</div>
+            <div className="shortcut"><code>⌘/Ctrl + L</code> Lang</div>
             <div className="shortcut"><code>⌘/Ctrl + Q</code> Quit</div>
-            <div className="shortcut"><code>⌘/Ctrl + Arrow Keys</code> Move Around</div>
           </div>
         </div>
       </div>
@@ -352,7 +423,49 @@ const App: React.FC = () => {
           <div className="processing">Processing... ({screenshots.length} screenshots)</div>
         ) : result ? (
           <div className="result">
-            {result.type === 'mcq' ? (
+            {result.type === 'qa' ? (
+              <>
+                <div className="solution-section">
+                  <h3 style={{ color: '#64B5F6', marginBottom: '6px' }}>Question</h3>
+                  <p style={{ fontSize: '1.05em', fontWeight: 600, margin: 0 }}>{result.question}</p>
+                </div>
+                <div className="solution-section">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <h3 style={{ color: '#81C784', margin: 0 }}>Answer</h3>
+                    <button
+                      onClick={() => {
+                        if (result.answer) {
+                          navigator.clipboard.writeText(result.answer);
+                          setSuccessMsg('Answer copied to clipboard!');
+                          setTimeout(() => setSuccessMsg(null), 2000);
+                        }
+                      }}
+                      className="copy-button"
+                      style={{
+                        padding: '4px 10px',
+                        fontSize: '12px',
+                        background: 'rgba(255, 255, 255, 0.15)',
+                        border: '1px solid rgba(255, 255, 255, 0.3)',
+                        borderRadius: '4px',
+                        color: '#fff',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      📋 Copy Answer
+                    </button>
+                  </div>
+                  <div style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                    padding: '12px',
+                    borderRadius: '6px',
+                    lineHeight: '1.5',
+                    borderLeft: '4px solid #81C784'
+                  }}>
+                    <strong>Answer: </strong>{result.answer}
+                  </div>
+                </div>
+              </>
+            ) : result.type === 'mcq' ? (
               <>
                 <div className="solution-section">
                   <h3>Question</h3>
@@ -391,6 +504,29 @@ const App: React.FC = () => {
                 </div>
                 <div className="solution-section">
                   <h3>Solution</h3>
+                  <div className="code-header" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '5px' }}>
+                    <button
+                      onClick={() => {
+                        if (result.code) {
+                          navigator.clipboard.writeText(result.code);
+                          setSuccessMsg('Code copied to clipboard!');
+                          setTimeout(() => setSuccessMsg(null), 2000);
+                        }
+                      }}
+                      className="copy-button"
+                      style={{
+                        padding: '4px 8px',
+                        fontSize: '12px',
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        borderRadius: '4px',
+                        color: '#fff',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Copy Code
+                    </button>
+                  </div>
                   <pre>
                     <code>{result.code && formatCode(result.code)}</code>
                   </pre>
