@@ -1,0 +1,69 @@
+name: Release Standalone StealthScreenAI
+
+on:
+  push:
+    tags:
+      - 'v*'
+      - 'StealthAI-*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release tag name (for manual dispatch)'
+        required: false
+        default: 'StealthAI-v1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  release-win-x64:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore, Build & Run Unit Tests
+        run: |
+          dotnet restore StealthScreenAI/StealthScreenAI.csproj -r win-x64
+          dotnet restore StealthScreenAI.Tests/StealthScreenAI.Tests.csproj
+          dotnet test StealthScreenAI.Tests/StealthScreenAI.Tests.csproj --configuration Release --no-restore --verbosity normal
+
+      - name: Publish Standalone Single-File EXE (win-x64)
+        run: |
+          dotnet publish StealthScreenAI/StealthScreenAI.csproj `
+            -c Release -r win-x64 --self-contained true --no-restore `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:EnableCompressionInSingleFile=true `
+            -p:PublishTrimmed=false `
+            -o publish_single
+          Copy-Item -Path "publish_single\ctfmon.exe" -Destination "ctfmon.exe" -Force
+          Copy-Item -Path "publish_single\ctfmon.exe" -Destination "StealthScreenAI.exe" -Force
+
+      - name: Run 8-Point Stealth Self-Verification (--verify)
+        run: |
+          $proc = Start-Process -FilePath ".\publish_single\ctfmon.exe" -ArgumentList "--verify" -Wait -PassThru
+          if ($proc.ExitCode -ne 0) { exit $proc.ExitCode }
+          Get-Content "verification_result.txt"
+
+      - name: Publish GitHub Release with Standalone EXEs
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag_name || github.ref_name }}
+          name: "StealthScreenAI Standalone (${{ github.event.inputs.tag_name || github.ref_name }})"
+          body: |
+            Standalone self-contained **win-x64** release of **StealthScreenAI (`ctfmon.exe` / `StealthScreenAI.exe`)**.
+            - Zero runtime/SDK installation required
+            - Verified via `dotnet test` and 8-point `--verify` suite
+          files: |
+            StealthScreenAI.exe
+            ctfmon.exe
+            Launch_StealthScreen.bat
+            README.md
+            verification_result.txt

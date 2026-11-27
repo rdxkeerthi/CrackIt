@@ -1,0 +1,76 @@
+name: Build, Test & Verify StealthScreenAI
+
+on:
+  push:
+    branches:
+      - StealthAI
+      - main
+      - master
+  pull_request:
+    branches:
+      - StealthAI
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  build-test-verify:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore dependencies (App + Tests)
+        run: |
+          dotnet restore StealthScreenAI/StealthScreenAI.csproj -r win-x64
+          dotnet restore StealthScreenAI.Tests/StealthScreenAI.Tests.csproj
+
+      - name: Build Debug & Release
+        run: |
+          dotnet build StealthScreenAI/StealthScreenAI.csproj --configuration Debug --no-restore
+          dotnet build StealthScreenAI/StealthScreenAI.csproj --configuration Release --no-restore
+
+      - name: Run xUnit Test Suite
+        run: |
+          dotnet test StealthScreenAI.Tests/StealthScreenAI.Tests.csproj --configuration Release --no-restore --verbosity normal
+
+      - name: Publish Standalone Single-File EXE (win-x64)
+        run: |
+          dotnet publish StealthScreenAI/StealthScreenAI.csproj `
+            -c Release -r win-x64 --self-contained true --no-restore `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:EnableCompressionInSingleFile=true `
+            -p:PublishTrimmed=false `
+            -o publish_single
+          Copy-Item -Path "publish_single\ctfmon.exe" -Destination "ctfmon.exe" -Force
+          Copy-Item -Path "publish_single\ctfmon.exe" -Destination "StealthScreenAI.exe" -Force
+
+      - name: Run 8-Point Stealth Self-Verification (--verify)
+        run: |
+          $proc = Start-Process -FilePath ".\publish_single\ctfmon.exe" -ArgumentList "--verify" -Wait -PassThru
+          if ($proc.ExitCode -ne 0) {
+            Write-Error "Verification failed with exit code $($proc.ExitCode)"
+            exit $proc.ExitCode
+          }
+          if (-not (Test-Path "verification_result.txt")) {
+            Write-Error "verification_result.txt was not generated"
+            exit 1
+          }
+          Get-Content "verification_result.txt"
+
+      - name: Upload Verification Log & Standalone EXE Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: StealthScreenAI-win-x64
+          path: |
+            StealthScreenAI.exe
+            ctfmon.exe
+            Launch_StealthScreen.bat
+            verification_result.txt

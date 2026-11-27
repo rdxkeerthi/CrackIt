@@ -1,0 +1,32 @@
+# Build & Compilation Results
+[Bb]in/
+[Oo]bj/
+[Pp]ublish/
+*.dll
+*.pdb
+*.exe
+!Launch_StealthScreen.bat
+
+# Visual Studio & IDE Caches
+.vs/
+.vscode/
+*.user
+*.userprefs
+*.suo
+*.sln.docstates
+*.userosscache
+*.lock.json
+project.lock.json
+
+# Local Configuration & Sensitive API Keys
+config.json
+*.env
+*.local.json
+secrets.json
+
+# Operating System Files
+Thumbs.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.tmp
+*.log
